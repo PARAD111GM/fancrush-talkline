@@ -1,113 +1,106 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/auth';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import Stripe from 'stripe';
-import { headers } from 'next/headers';
 
-// Initialize Stripe with latest API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as any,
-});
+// Initialize Stripe with the secret key
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Webhook endpoint
 export async function POST(request: Request) {
-  const body = await request.text();
-  const signature = headers().get('stripe-signature') || '';
-  
-  if (!signature) {
-    return NextResponse.json(
-      { error: 'Missing Stripe signature' },
-      { status: 400 }
-    );
-  }
-  
-  let event: Stripe.Event;
-  
   try {
-    // Verify webhook signature
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 }
-    );
-  }
-  
-  // Get Supabase client
-  const supabase = await createServerSupabaseClient();
-  
-  // Handle specific events
-  if (event.type === 'checkout.session.completed') {
-    const checkoutSession = event.data.object as Stripe.Checkout.Session;
+    // Get the raw request body as text
+    const body = await request.text();
     
-    // Process successful checkout
-    if (checkoutSession.status === 'complete' && checkoutSession.payment_status === 'paid') {
-      const userId = checkoutSession.metadata?.user_id;
-      const minutes = parseInt(checkoutSession.metadata?.minutes || '0', 10);
+    // Get the Stripe signature from headers
+    const signature = request.headers.get('stripe-signature');
+    
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing Stripe signature' }, { status: 400 });
+    }
+
+    // Verify webhook signature
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        body, 
+        signature, 
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
+    }
+
+    // Create Supabase client
+    const supabase = createServerSupabaseClient();
+    
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
       
-      if (!userId || !minutes) {
-        console.error('Missing metadata in checkout session:', checkoutSession.id);
-        return NextResponse.json(
-          { error: 'Missing session metadata' },
-          { status: 400 }
-        );
+      // Extract user ID and minutes from metadata
+      const userId = session.metadata?.user_id;
+      const minutesPurchased = session.metadata?.minutes;
+      
+      if (!userId || !minutesPurchased) {
+        return NextResponse.json({ error: 'Missing user metadata in session' }, { status: 400 });
       }
-      
-      // Begin transaction to update user minutes and create transaction record
+
       try {
-        // 1. Get current available minutes
-        const { data: profile } = await supabase
+        // Get the user's current available minutes
+        const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('available_minutes')
           .eq('id', userId)
           .single();
-        
-        if (!profile) {
-          throw new Error(`User profile not found: ${userId}`);
+          
+        if (userError) {
+          console.error('Error fetching user profile:', userError);
+          return NextResponse.json({ error: 'Error fetching user profile' }, { status: 500 });
         }
         
-        const currentMinutes = profile.available_minutes || 0;
-        const newMinutes = currentMinutes + minutes;
+        // Calculate the new minutes total
+        const currentMinutes = userData.available_minutes || 0;
+        const newMinutes = currentMinutes + parseInt(minutesPurchased, 10);
         
-        // 2. Update user's available minutes
+        // Update the user's available minutes
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ available_minutes: newMinutes })
           .eq('id', userId);
-        
+          
         if (updateError) {
-          throw new Error(`Failed to update minutes: ${updateError.message}`);
+          console.error('Error updating user minutes:', updateError);
+          return NextResponse.json({ error: 'Error updating user minutes' }, { status: 500 });
         }
         
-        // 3. Create transaction record
+        // Record the transaction
         const { error: transactionError } = await supabase
           .from('transactions')
           .insert({
             user_id: userId,
-            amount: minutes,
+            amount: session.amount_total ? session.amount_total / 100 : 0, // Convert from cents to dollars
             type: 'purchase',
-            description: `Purchased ${minutes} minutes`,
-            stripe_payment_id: checkoutSession.id
+            description: `Purchased ${minutesPurchased} minutes`,
           });
-        
+          
         if (transactionError) {
-          throw new Error(`Failed to create transaction: ${transactionError.message}`);
+          console.error('Error recording transaction:', transactionError);
+          // Don't return error here, as minutes are already added
         }
         
-        console.log(`Successfully processed payment and added ${minutes} minutes for user ${userId}`);
-      } catch (error: any) {
-        console.error('Error processing payment:', error.message);
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
+        console.log(`Successfully added ${minutesPurchased} minutes to user ${userId}`);
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        console.error('Error processing payment:', error);
+        return NextResponse.json({ error: 'Error processing payment' }, { status: 500 });
       }
     }
+    
+    // Return a 200 response for unhandled events
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error('Error handling webhook:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  
-  return NextResponse.json({ received: true });
 } 

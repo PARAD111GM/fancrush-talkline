@@ -4,153 +4,110 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center">
+    <main className="container mx-auto px-4 py-12 md:px-6 md:py-16 lg:px-8">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-background to-muted">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:grid-cols-2">
-            <div className="flex flex-col justify-center space-y-4">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Talk to Your Favorite Influencers
-                </h1>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Experience AI-powered phone conversations with digital twins of online creators and influencers.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/register">
-                  <Button size="lg" className="w-full min-[400px]:w-auto">Get Started</Button>
-                </Link>
-                <Link href="/demo">
-                  <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">Try Demo Call</Button>
-                </Link>
-              </div>
-            </div>
-            <div className="mx-auto flex w-full max-w-[400px] items-center justify-center lg:max-w-none">
-              <div className="w-full h-[300px] rounded-lg bg-muted p-4 flex items-center justify-center text-muted-foreground">
-                Phone Mockup Image
-              </div>
-            </div>
-          </div>
+      <section className="flex flex-col items-center justify-center text-center mb-16">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-primary">
+          Fancrush Talkline
+        </h1>
+        <p className="text-xl max-w-3xl mb-10">
+          Experience AI-powered phone conversations with digital twins of online creators and influencers.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button asChild size="lg">
+            <Link href="/influencers">Try Demo Call</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/get-started">Get Started</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Featured Influencers */}
-      <section className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Featured Influencers
-              </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Connect with these popular creators through our AI-powered voice technology.
-              </p>
+      {/* Featured Influencers Section */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-bold text-center mb-12">Featured Influencers</h2>
+        <p className="text-lg text-center mb-10">
+          Connect with these popular creators through our AI-powered voice technology.
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Influencer Card - Emma */}
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+            <div className="h-48 bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">Image Placeholder</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">Emma Johnson</h3>
+              <p className="text-sm text-muted-foreground mb-2">Travel & Lifestyle Vlogger</p>
+              <p className="mb-6">Shares travel tips, lifestyle advice, and personal stories from around the world.</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/emma-johnson">View Profile</Link>
+              </Button>
             </div>
           </div>
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 pt-8">
-            <Card>
-              <CardHeader>
-                <div className="w-full h-[200px] rounded-md bg-muted mb-4"></div>
-                <CardTitle>Emma Johnson</CardTitle>
-                <CardDescription>Travel & Lifestyle Vlogger</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Shares travel tips, lifestyle advice, and personal stories from around the world.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Link href="/influencers/emma-johnson">
-                  <Button variant="outline">View Profile</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="w-full h-[200px] rounded-md bg-muted mb-4"></div>
-                <CardTitle>Jake Smith</CardTitle>
-                <CardDescription>Tech Reviewer & Gaming Streamer</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Reviews the latest tech products and streams popular games with his audience.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Link href="/influencers/jake-smith">
-                  <Button variant="outline">View Profile</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="w-full h-[200px] rounded-md bg-muted mb-4"></div>
-                <CardTitle>Sophia Chen</CardTitle>
-                <CardDescription>Fitness Coach & Nutritionist</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Shares workout routines, nutrition advice, and motivational content for a healthy lifestyle.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Link href="/influencers/sophia-chen">
-                  <Button variant="outline">View Profile</Button>
-                </Link>
-              </CardFooter>
-            </Card>
+          
+          {/* Influencer Card - Jake */}
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+            <div className="h-48 bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">Image Placeholder</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">Jake Smith</h3>
+              <p className="text-sm text-muted-foreground mb-2">Tech Reviewer & Gaming Streamer</p>
+              <p className="mb-6">Reviews the latest tech products and streams popular games with his audience.</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/jake-smith">View Profile</Link>
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-center mt-8">
-            <Link href="/influencers">
-              <Button>Explore All Influencers</Button>
-            </Link>
+          
+          {/* Influencer Card - Sophia */}
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+            <div className="h-48 bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">Image Placeholder</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">Sophia Chen</h3>
+              <p className="text-sm text-muted-foreground mb-2">Fitness Coach & Nutritionist</p>
+              <p className="mb-6">Shares workout routines, nutrition advice, and motivational content for a healthy lifestyle.</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/sophia-chen">View Profile</Link>
+              </Button>
+            </div>
           </div>
         </div>
+        
+        <div className="text-center mt-12">
+          <Button asChild>
+            <Link href="/influencers">Explore All Influencers</Link>
+          </Button>
+        </div>
       </section>
-
-      {/* How It Works */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                How It Works
-              </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                It's easy to start talking with your favorite influencers. Just follow these steps.
-              </p>
-            </div>
+      
+      {/* How It Works Section */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+        <p className="text-lg text-center mb-10">
+          It's easy to start talking with your favorite influencers. Just follow these steps:
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+            <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">1</div>
+            <h3 className="text-xl font-semibold mb-3">Create an Account</h3>
+            <p>Sign up for Fancrush Talkline and verify your phone number to get started.</p>
           </div>
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 pt-8">
-            <div className="flex flex-col items-center space-y-2 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                1
-              </div>
-              <h3 className="text-xl font-bold">Create an Account</h3>
-              <p className="text-muted-foreground">
-                Sign up and verify your phone number to get started.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                2
-              </div>
-              <h3 className="text-xl font-bold">Purchase Minutes</h3>
-              <p className="text-muted-foreground">
-                Choose a minute pack that suits your needs.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                3
-              </div>
-              <h3 className="text-xl font-bold">Start Talking</h3>
-              <p className="text-muted-foreground">
-                Call through the app or receive a call on your phone.
-              </p>
-            </div>
+          
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+            <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">2</div>
+            <h3 className="text-xl font-semibold mb-3">Purchase Minutes</h3>
+            <p>Buy talk time minutes to use with any influencer on the platform.</p>
+          </div>
+          
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+            <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">3</div>
+            <h3 className="text-xl font-semibold mb-3">Start Talking</h3>
+            <p>Initiate a call to any influencer and enjoy a natural conversation powered by AI.</p>
           </div>
         </div>
       </section>
@@ -242,6 +199,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 } 

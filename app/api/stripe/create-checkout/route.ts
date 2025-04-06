@@ -1,75 +1,61 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/auth';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import Stripe from 'stripe';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
+// Initialize Stripe with the secret key
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+// Create a checkout session for purchasing minutes
 export async function POST(request: Request) {
   try {
-    // Get authenticated user
-    const supabase = await createServerSupabaseClient();
+    // Parse request body
+    const { minutes, priceCents, successUrl, cancelUrl } = await request.json();
+    
+    // Validate inputs
+    if (!minutes || typeof minutes !== 'number' || minutes <= 0) {
+      return NextResponse.json({ error: 'Invalid minutes value' }, { status: 400 });
+    }
+    
+    if (!priceCents || typeof priceCents !== 'number' || priceCents <= 0) {
+      return NextResponse.json({ error: 'Invalid price value' }, { status: 400 });
+    }
+
+    // Create Supabase server client
+    const supabase = createServerSupabaseClient();
+    
+    // Get the user session
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Get request body
-    const { minutes, priceCents } = await request.json();
-    
-    // Validate input
-    if (!minutes || !priceCents || isNaN(minutes) || isNaN(priceCents)) {
-      return NextResponse.json(
-        { error: 'Invalid minutes or price' },
-        { status: 400 }
-      );
-    }
-    
-    // Get the user profile
+
+    // Get the user profile to check for existing stripe_customer_id
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, stripe_customer_id')
+      .select('stripe_customer_id')
       .eq('id', session.user.id)
       .single();
-    
-    if (!profile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Create or retrieve Stripe customer
-    let customerId = profile.stripe_customer_id;
-    
+
+    // Create or retrieve a Stripe customer
+    let customerId = profile?.stripe_customer_id;
     if (!customerId) {
-      // Get user email from auth
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Create Stripe customer
       const customer = await stripe.customers.create({
-        email: user?.email || undefined,
+        email: session.user.email,
         metadata: {
-          supabase_id: session.user.id,
-        },
+          user_id: session.user.id
+        }
       });
       
       customerId = customer.id;
       
-      // Update profile with Stripe customer ID
+      // Update the user's profile with the new Stripe customer ID
       await supabase
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', session.user.id);
     }
-    
-    // Create checkout session
+
+    // Create the checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -78,8 +64,8 @@ export async function POST(request: Request) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${minutes} Minutes Talk Time`,
-              description: `Purchase ${minutes} minutes of talk time with influencers`,
+              name: `${minutes} Talk Time Minutes`,
+              description: `Purchase of ${minutes} minutes for Fancrush Talkline`,
             },
             unit_amount: priceCents,
           },
@@ -87,20 +73,19 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?checkout=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?checkout=canceled`,
+      success_url: `${successUrl}?success=true`,
+      cancel_url: `${cancelUrl}?canceled=true`,
       metadata: {
         user_id: session.user.id,
         minutes: minutes.toString(),
       },
     });
-    
+
     return NextResponse.json({ url: checkoutSession.url });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating checkout session:', error);
-    
     return NextResponse.json(
-      { error: error.message || 'An error occurred' },
+      { error: 'Error creating checkout session' },
       { status: 500 }
     );
   }

@@ -50,7 +50,7 @@ describe('Stripe Webhook API', () => {
       get: jest.fn().mockReturnValue('sig_mock123'),
     });
     
-    const stripeMock = (Stripe as jest.Mock).mock.results[0].value;
+    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockImplementation(() => {
       throw new Error('Invalid signature');
     });
@@ -88,7 +88,7 @@ describe('Stripe Webhook API', () => {
       },
     };
     
-    const stripeMock = (Stripe as jest.Mock).mock.results[0].value;
+    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
     
     // Mock Supabase client
@@ -176,7 +176,7 @@ describe('Stripe Webhook API', () => {
       },
     };
     
-    const stripeMock = (Stripe as jest.Mock).mock.results[0].value;
+    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
     
     // Mock Supabase client with error

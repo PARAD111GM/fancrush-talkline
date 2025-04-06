@@ -2,8 +2,20 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import InfluencerClientPage from '@/app/[influencer-slug]/InfluencerClientPage';
 import { useSupabase } from '@/components/supabase-provider';
 
+// Create a manual mock for useSupabase
+const mockUseSupabase = {
+  supabase: {
+    auth: {
+      getSession: jest.fn(),
+      signOut: jest.fn(),
+    },
+  },
+};
+
 // Mock the useSupabase hook
-jest.mock('@/components/supabase-provider');
+jest.mock('@/components/supabase-provider', () => ({
+  useSupabase: jest.fn(),
+}));
 
 describe('InfluencerClientPage Component', () => {
   const mockProps = {
@@ -14,16 +26,14 @@ describe('InfluencerClientPage Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset the mock implementation for each test
+    (useSupabase as jest.Mock).mockImplementation(() => mockUseSupabase);
   });
 
   test('renders the component with Talk Now button when not in a call', () => {
     // Mock unauthenticated state
-    (useSupabase as jest.Mock).mockReturnValue({
-      supabase: {
-        auth: {
-          getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-        },
-      },
+    mockUseSupabase.supabase.auth.getSession.mockResolvedValue({ 
+      data: { session: null } 
     });
 
     render(<InfluencerClientPage {...mockProps} />);
@@ -38,12 +48,8 @@ describe('InfluencerClientPage Component', () => {
 
   test('starts a demo call when Talk Now button is clicked', async () => {
     // Mock unauthenticated state
-    (useSupabase as jest.Mock).mockReturnValue({
-      supabase: {
-        auth: {
-          getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-        },
-      },
+    mockUseSupabase.supabase.auth.getSession.mockResolvedValue({ 
+      data: { session: null } 
     });
 
     render(<InfluencerClientPage {...mockProps} />);
@@ -59,12 +65,8 @@ describe('InfluencerClientPage Component', () => {
 
   test('ends the call and shows signup modal when End Call is clicked', async () => {
     // Mock unauthenticated state
-    (useSupabase as jest.Mock).mockReturnValue({
-      supabase: {
-        auth: {
-          getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-        },
-      },
+    mockUseSupabase.supabase.auth.getSession.mockResolvedValue({ 
+      data: { session: null } 
     });
 
     render(<InfluencerClientPage {...mockProps} />);
@@ -82,16 +84,10 @@ describe('InfluencerClientPage Component', () => {
 
   test('does not show login/signup buttons when authenticated', async () => {
     // Mock authenticated state
-    (useSupabase as jest.Mock).mockReturnValue({
-      supabase: {
-        auth: {
-          getSession: jest.fn().mockResolvedValue({ 
-            data: { 
-              session: { user: { id: 'test-user-id' } } 
-            } 
-          }),
-        },
-      },
+    mockUseSupabase.supabase.auth.getSession.mockResolvedValue({ 
+      data: { 
+        session: { user: { id: 'test-user-id' } } 
+      } 
     });
 
     // We need to wait for the useEffect to run
