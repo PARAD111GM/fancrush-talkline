@@ -1,14 +1,16 @@
 import { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { POST } from '@/app/api/webhooks/stripe/route';
-import { createServerSupabaseClient } from '@/lib/auth';
-import Stripe from 'stripe';
 import { headers } from 'next/headers';
+import Stripe from 'stripe';
+import { createServerSupabaseClient } from '@/lib/auth';
 
-// Mock dependencies
+// Mock the createServerSupabaseClient function
 jest.mock('@/lib/auth', () => ({
   createServerSupabaseClient: jest.fn(),
 }));
 
+// Mock Stripe to use our mock instance
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     webhooks: {
@@ -17,13 +19,19 @@ jest.mock('stripe', () => {
   }));
 });
 
+// Mock headers for Next.js
 jest.mock('next/headers', () => ({
   headers: jest.fn(),
 }));
 
 describe('Stripe Webhook API', () => {
+  let stripeMock: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Initialize stripeMock after each test reset
+    stripeMock = jest.requireMock('stripe')();
   });
   
   test('returns 400 if stripe signature is missing', async () => {
@@ -50,7 +58,6 @@ describe('Stripe Webhook API', () => {
       get: jest.fn().mockReturnValue('sig_mock123'),
     });
     
-    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockImplementation(() => {
       throw new Error('Invalid signature');
     });
@@ -88,7 +95,6 @@ describe('Stripe Webhook API', () => {
       },
     };
     
-    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
     
     // Mock Supabase client
@@ -176,7 +182,6 @@ describe('Stripe Webhook API', () => {
       },
     };
     
-    const stripeMock = (Stripe as unknown as jest.Mock).mock.results[0].value;
     stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
     
     // Mock Supabase client with error

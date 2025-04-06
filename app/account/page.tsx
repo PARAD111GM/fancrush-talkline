@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useSupabase } from '@/components/supabase-provider';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -20,7 +21,37 @@ export default function AccountPage() {
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
-
+  
+  // Call history
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+  const [loadingCallHistory, setLoadingCallHistory] = useState(false);
+  
+  // Load user's call history
+  const loadCallHistory = useCallback(async (userId: string) => {
+    setLoadingCallHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('call_logs')
+        .select(`
+          *,
+          influencers:influencer_id (name)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) {
+        console.error('Error loading call history:', error);
+      } else {
+        setCallHistory(data || []);
+      }
+    } catch (err) {
+      console.error('Error loading call history:', err);
+    } finally {
+      setLoadingCallHistory(false);
+    }
+  }, [supabase]);
+  
   useEffect(() => {
     // Check if user is authenticated and redirect if not
     const checkAuth = async () => {
@@ -42,11 +73,29 @@ export default function AccountPage() {
       if (profile?.phone_number) {
         setPhoneNumber(profile.phone_number);
       }
+      
+      // Load call history
+      loadCallHistory(session.user.id);
+      
       setLoading(false);
     };
     
     checkAuth();
-  }, [supabase, router]);
+  }, [supabase, router, loadCallHistory]);
+  
+  // Format duration in seconds to minutes and seconds
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return 'N/A';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Format date to readable string
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -285,6 +334,11 @@ export default function AccountPage() {
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold">{profile?.available_minutes || 0}</p>
+            <div className="mt-2">
+              <Link href="/account/transactions" className="text-sm text-primary hover:underline">
+                View transaction history
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -423,6 +477,48 @@ export default function AccountPage() {
             </CardContent>
           </Card>
         )}
+      </div>
+      
+      {/* Call History */}
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Call History</CardTitle>
+            <CardDescription>Your recent calls with influencers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingCallHistory ? (
+              <p>Loading call history...</p>
+            ) : callHistory.length > 0 ? (
+              <div className="space-y-4">
+                {callHistory.map((call) => (
+                  <div key={call.id} className="flex flex-col sm:flex-row justify-between border-b pb-3">
+                    <div>
+                      <p className="font-medium">{call.influencers?.name || 'Unknown Influencer'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(call.created_at)}
+                      </p>
+                    </div>
+                    <div className="sm:text-right mt-2 sm:mt-0">
+                      <p className="text-sm capitalize">
+                        Status: <span className={`font-medium ${
+                          call.status === 'completed' ? 'text-green-500' :
+                          call.status === 'failed' ? 'text-red-500' :
+                          'text-yellow-500'
+                        }`}>{call.status}</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Duration: {formatDuration(call.duration_seconds)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No call history yet.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
       
       {/* Account Actions */}

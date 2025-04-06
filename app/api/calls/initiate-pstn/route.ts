@@ -110,11 +110,10 @@ export async function POST(request: Request) {
     
     // In a real implementation, we would initiate a Twilio call here
     // This is a simplified version that would connect the user's phone with Vapi
-    /*
     const call = await twilioClient.calls.create({
       url: `https://api.vapi.ai/call/phone/${influencer.vapi_assistant_id}`,
       to: profile.phone_number,
-      from: process.env.TWILIO_PHONE_NUMBER,
+      from: process.env.TWILIO_PHONE_NUMBER || '',
       statusCallback: `${process.env.NEXT_PUBLIC_APP_URL}/api/calls/status-callback?call_id=${callRecord.id}`,
       statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
       statusCallbackMethod: 'POST',
@@ -125,16 +124,6 @@ export async function POST(request: Request) {
       .from('call_logs')
       .update({
         platform_call_sid: call.sid,
-        status: 'ringing',
-      })
-      .eq('id', callRecord.id);
-    */
-    
-    // For demo purposes, since we're not actually making a call
-    await supabase
-      .from('call_logs')
-      .update({
-        platform_call_sid: `demo_${Date.now()}`,
         status: 'ringing',
       })
       .eq('id', callRecord.id);

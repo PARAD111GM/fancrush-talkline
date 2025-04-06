@@ -66,52 +66,81 @@ jest.mock('stripe', () => {
 // Mock fetch
 global.fetch = jest.fn();
 
-// Mock Request, Response, and Headers for Next.js API tests
-global.Request = jest.fn();
-global.Response = jest.fn();
-global.Headers = jest.fn();
+// We don't need to mock Request, Response, and Headers
+// NextRequest and NextResponse from next/server will be used instead
 
-// Mock next/server
+// Mock headers for Next.js
+jest.mock('next/headers', () => ({
+  headers: jest.fn().mockReturnValue({
+    get: jest.fn().mockReturnValue('test-header'),
+  }),
+}));
+
+// Mock only NextRequest and NextResponse
 jest.mock('next/server', () => {
-  const originalModule = jest.requireActual('next/server');
-  const cookies = {
-    get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
-    set: jest.fn(),
-    delete: jest.fn(),
-  };
+  const origModule = jest.requireActual('next/server');
   
   class MockNextRequest {
     constructor(url, options = {}) {
-      this.url = url;
+      // Use a proper URL object
+      this._url = new URL(url, 'http://localhost:3000');
       this.method = options.method || 'GET';
-      this.body = options.body;
+      this.body = options.body || '';
       this.headers = new Map();
       if (options.headers) {
         Object.entries(options.headers).forEach(([key, value]) => {
           this.headers.set(key, value);
         });
       }
-      this.cookies = cookies;
-    }
-    
-    json() {
-      return Promise.resolve(JSON.parse(this.body));
-    }
-  }
-  
-  class MockNextResponse {
-    static json(data, options = {}) {
-      return {
-        status: options.status || 200,
-        json: async () => data,
+      this.cookies = {
+        get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
+        set: jest.fn(),
+        delete: jest.fn(),
+        getAll: jest.fn().mockReturnValue([]),
       };
     }
+
+    // Property url is a getter
+    get url() {
+      return this._url.toString();
+    }
+    
+    // Mock formData method
+    formData() {
+      const formData = new FormData();
+      if (typeof this.body === 'string' && this.body.includes('CallSid')) {
+        formData.append('CallSid', 'CALL123');
+        formData.append('CallStatus', 'completed');
+        formData.append('CallDuration', '120');
+      }
+      return Promise.resolve(formData);
+    }
+    
+    // Mock json method
+    json() {
+      if (typeof this.body === 'string') {
+        try {
+          return Promise.resolve(JSON.parse(this.body));
+        } catch (e) {
+          return Promise.resolve({});
+        }
+      }
+      return Promise.resolve({});
+    }
   }
   
+  const mockNextResponse = {
+    json: (data, options = {}) => ({
+      status: options.status || 200,
+      json: async () => data,
+      ...data,
+    }),
+  };
+  
   return {
-    ...originalModule,
+    ...origModule,
     NextRequest: MockNextRequest,
-    NextResponse: MockNextResponse,
+    NextResponse: mockNextResponse,
   };
 });
 
