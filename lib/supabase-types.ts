@@ -19,6 +19,11 @@ export interface Database {
           photo_url: string | null
           prompt: string | null
           cost_per_min: number
+          slug: string
+          profile_image_url: string | null
+          landing_page_image_urls: string[] | null
+          greeting_copy: string | null
+          vapi_assistant_id: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +34,11 @@ export interface Database {
           photo_url?: string | null
           prompt?: string | null
           cost_per_min?: number
+          slug: string
+          profile_image_url?: string | null
+          landing_page_image_urls?: string[] | null
+          greeting_copy?: string | null
+          vapi_assistant_id?: string | null
         }
         Update: {
           id?: string
@@ -39,6 +49,11 @@ export interface Database {
           photo_url?: string | null
           prompt?: string | null
           cost_per_min?: number
+          slug?: string
+          profile_image_url?: string | null
+          landing_page_image_urls?: string[] | null
+          greeting_copy?: string | null
+          vapi_assistant_id?: string | null
         }
         Relationships: []
       }
@@ -112,6 +127,58 @@ export interface Database {
           }
         ]
       }
+      call_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          influencer_id: string | null
+          call_type: string
+          platform_call_sid: string | null
+          start_time: string
+          end_time: string | null
+          duration_seconds: number | null
+          minutes_deducted: number | null
+          status: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          influencer_id?: string | null
+          call_type: string
+          platform_call_sid?: string | null
+          start_time?: string
+          end_time?: string | null
+          duration_seconds?: number | null
+          minutes_deducted?: number | null
+          status?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          influencer_id?: string | null
+          call_type?: string
+          platform_call_sid?: string | null
+          start_time?: string
+          end_time?: string | null
+          duration_seconds?: number | null
+          minutes_deducted?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_influencer_id_fkey"
+            columns: ["influencer_id"]
+            referencedRelation: "influencers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           id: string
@@ -121,7 +188,8 @@ export interface Database {
           full_name: string | null
           phone_number: string | null
           phone_verified: boolean
-          remaining_minutes: number
+          available_minutes: number
+          stripe_customer_id: string | null
         }
         Insert: {
           id: string
@@ -131,7 +199,8 @@ export interface Database {
           full_name?: string | null
           phone_number?: string | null
           phone_verified?: boolean
-          remaining_minutes?: number
+          available_minutes?: number
+          stripe_customer_id?: string | null
         }
         Update: {
           id?: string
@@ -141,7 +210,8 @@ export interface Database {
           full_name?: string | null
           phone_number?: string | null
           phone_verified?: boolean
-          remaining_minutes?: number
+          available_minutes?: number
+          stripe_customer_id?: string | null
         }
         Relationships: [
           {
