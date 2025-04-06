@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,18 @@ import { useSupabase } from "./supabase-provider"
 export function NavBar() {
   const pathname = usePathname()
   const { supabase } = useSupabase()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLoggedIn(!!session)
+      setLoading(false)
+    }
+    
+    checkAuth()
+  }, [supabase])
   
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -57,14 +70,33 @@ export function NavBar() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
-            <Link href="/login">
-              <Button variant="outline" className="hidden md:flex">
-                Sign in
-              </Button>
-            </Link>
-            <Button>
-              <Link href="/register">Get Started</Link>
-            </Button>
+            {!loading && (
+              <>
+                {isLoggedIn ? (
+                  <>
+                    <Link href="/account">
+                      <Button variant="outline" className="hidden md:flex">
+                        My Account
+                      </Button>
+                    </Link>
+                    <Button variant="secondary" onClick={signOut}>
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login">
+                      <Button variant="outline" className="hidden md:flex">
+                        Sign in
+                      </Button>
+                    </Link>
+                    <Button>
+                      <Link href="/register">Get Started</Link>
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
           </nav>
         </div>
       </div>

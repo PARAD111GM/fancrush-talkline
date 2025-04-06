@@ -3,16 +3,23 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useSupabase } from '@/components/supabase-provider';
 import { useRouter } from 'next/navigation';
 
 export default function AccountPage() {
   const router = useRouter();
-  const { supabase } = useSupabase();
+  const { supabase, user } = useSupabase();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [callInitiating, setCallInitiating] = useState(false);
   const [callStatus, setCallStatus] = useState<string | null>(null);
+  
+  // Phone verification
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showVerificationInput, setShowVerificationInput] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is authenticated and redirect if not
@@ -20,7 +27,7 @@ export default function AccountPage() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        router.push('/login');
+        router.push('/login?redirect=/account');
         return;
       }
       
@@ -32,6 +39,9 @@ export default function AccountPage() {
         .single();
       
       setProfile(profile);
+      if (profile?.phone_number) {
+        setPhoneNumber(profile.phone_number);
+      }
       setLoading(false);
     };
     
@@ -68,6 +78,12 @@ export default function AccountPage() {
   };
 
   const handleInitiateCall = async (influencerId: string) => {
+    // Check if phone is verified
+    if (!profile?.phone_verified) {
+      setCallStatus('You need to verify your phone number before making calls.');
+      return;
+    }
+    
     setCallInitiating(true);
     setCallStatus('Initiating call...');
     
@@ -100,6 +116,93 @@ export default function AccountPage() {
     }
   };
 
+  const handleSendVerificationCode = async () => {
+    if (!phoneNumber.match(/^\+[1-9]\d{1,14}$/)) {
+      setVerificationMessage('Please enter a valid phone number in international format (e.g., +19876543210)');
+      return;
+    }
+
+    setLoading(true);
+    setVerificationMessage('Sending verification code...');
+
+    try {
+      // Here in a real app, you would call an API to send a verification code
+      // For this demo, we'll simulate the process
+      
+      // Update the phone number in the profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          phone_number: phoneNumber,
+          phone_verified: false
+        })
+        .eq('id', user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setShowVerificationInput(true);
+      setVerificationMessage('Verification code sent! Please enter it below.');
+    } catch (error: any) {
+      console.error('Error sending verification code:', error);
+      setVerificationMessage(`Error: ${error.message || 'Failed to send verification code'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyPhone = async () => {
+    if (!verificationCode || verificationCode.length < 4) {
+      setVerificationMessage('Please enter a valid verification code');
+      return;
+    }
+
+    setLoading(true);
+    setVerificationMessage('Verifying...');
+
+    try {
+      // In a real app, you would verify the code with your API
+      // For this demo, we'll simply accept any 6-digit code
+      
+      if (verificationCode.length === 6 && /^\d+$/.test(verificationCode)) {
+        // Update the profile to mark the phone as verified
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            phone_verified: true 
+          })
+          .eq('id', user.id);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Update local state
+        setProfile({
+          ...profile,
+          phone_number: phoneNumber,
+          phone_verified: true
+        });
+        
+        setShowVerificationInput(false);
+        setVerificationMessage('Phone number verified successfully!');
+        
+        // Clear the success message after 3 seconds
+        setTimeout(() => {
+          setVerificationMessage(null);
+        }, 3000);
+      } else {
+        setVerificationMessage('Invalid verification code. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Error verifying phone:', error);
+      setVerificationMessage(`Error: ${error.message || 'Failed to verify phone'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container flex items-center justify-center py-16 min-h-[60vh]">
@@ -111,6 +214,67 @@ export default function AccountPage() {
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Your Account</h1>
+      
+      {/* Phone Verification */}
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Phone Verification</CardTitle>
+            <CardDescription>
+              {profile?.phone_verified 
+                ? 'Your phone number is verified' 
+                : 'Verify your phone number to make calls'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {verificationMessage && (
+              <div className={`p-3 rounded-md ${
+                verificationMessage.includes('Error') 
+                  ? 'bg-destructive/10 text-destructive' 
+                  : 'bg-primary/10 text-primary'
+              }`}>
+                {verificationMessage}
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <Input
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+19876543210"
+                disabled={profile?.phone_verified || loading}
+                className="flex-1"
+              />
+              {!profile?.phone_verified && (
+                <Button 
+                  onClick={handleSendVerificationCode}
+                  disabled={loading || !phoneNumber}
+                >
+                  Send Code
+                </Button>
+              )}
+            </div>
+            
+            {showVerificationInput && !profile?.phone_verified && (
+              <div className="flex space-x-2 mt-2">
+                <Input
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleVerifyPhone}
+                  disabled={loading || !verificationCode}
+                >
+                  Verify
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Minutes Balance */}
       <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-3">
@@ -206,7 +370,7 @@ export default function AccountPage() {
                   <Button 
                     className="w-full" 
                     onClick={() => handleInitiateCall('00000000-0000-0000-0000-000000000001')}
-                    disabled={callInitiating}
+                    disabled={callInitiating || !profile?.phone_verified}
                   >
                     Call Me Now
                   </Button>
@@ -222,7 +386,7 @@ export default function AccountPage() {
                   <Button 
                     className="w-full" 
                     onClick={() => handleInitiateCall('00000000-0000-0000-0000-000000000002')}
-                    disabled={callInitiating}
+                    disabled={callInitiating || !profile?.phone_verified}
                   >
                     Call Me Now
                   </Button>
@@ -238,7 +402,7 @@ export default function AccountPage() {
                   <Button 
                     className="w-full" 
                     onClick={() => handleInitiateCall('00000000-0000-0000-0000-000000000003')}
-                    disabled={callInitiating}
+                    disabled={callInitiating || !profile?.phone_verified}
                   >
                     Call Me Now
                   </Button>

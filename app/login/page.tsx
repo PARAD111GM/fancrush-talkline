@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,11 +10,26 @@ import { useSupabase } from "@/components/supabase-provider"
 
 export default function Login() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get('redirect') || '/account'
+  
   const { supabase } = useSupabase()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push(redirectUrl)
+      }
+    }
+    
+    checkAuth()
+  }, [supabase, router, redirectUrl])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,9 +46,10 @@ export default function Login() {
         throw error
       }
 
-      router.push("/dashboard")
+      router.push(redirectUrl)
       router.refresh()
     } catch (error: any) {
+      console.error('Login error:', error)
       setError(error.message || "An error occurred during login")
     } finally {
       setLoading(false)
@@ -67,6 +83,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -88,6 +105,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
           </CardContent>

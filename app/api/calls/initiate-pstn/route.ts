@@ -11,7 +11,7 @@ const twilioClient = twilio(
 export async function POST(request: Request) {
   try {
     // Get authenticated user
-    const supabase = await createServerSupabaseClient();
+    const supabase = createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -92,6 +92,20 @@ export async function POST(request: Request) {
         { error: 'Failed to create call record' },
         { status: 500 }
       );
+    }
+    
+    // Deduct one minute from the user's available minutes
+    // This is a placeholder - in a real app, you would deduct minutes based on the call duration
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ 
+        available_minutes: profile.available_minutes - 1 
+      })
+      .eq('id', session.user.id);
+      
+    if (updateError) {
+      console.error('Error updating minutes:', updateError);
+      // We continue anyway since the call record was created
     }
     
     // In a real implementation, we would initiate a Twilio call here
