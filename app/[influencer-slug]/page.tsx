@@ -3,10 +3,16 @@ import Image from 'next/image';
 import { createServerSupabaseClient } from '@/lib/auth';
 import InfluencerClientPage from './InfluencerClientPage';
 
+interface PageProps {
+  params: {
+    'influencer-slug': string;
+  };
+}
+
 // Server Component to fetch influencer data
-export default async function InfluencerPage({ params }: { params: { 'influencer-slug': string } }) {
+export default async function InfluencerPage({ params }: PageProps) {
   const slug = params['influencer-slug'];
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   
   // Fetch influencer data from Supabase
   const { data: influencer, error } = await supabase

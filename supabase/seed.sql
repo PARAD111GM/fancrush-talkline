@@ -24,15 +24,4 @@ VALUES
     ARRAY['https://images.unsplash.com/photo-1518609878373-06d740f60d8b', 'https://images.unsplash.com/photo-1518310383802-640c2de311b6'],
     'Hi! I''m Sophia, fitness coach and nutritionist. I love helping people achieve their health goals. What can I help you with today?',
     'demo_assistant_id_3'
-  );
-
--- Insert sample minute packs
-INSERT INTO public.transactions (user_id, stripe_charge_id, amount_paid_cents, currency, minutes_purchased)
-VALUES
-  (
-    '00000000-0000-0000-0000-000000000000', -- This is a placeholder, will need to be updated with a real user ID
-    'demo_charge_1',
-    1000,
-    'USD',
-    10
   ); 

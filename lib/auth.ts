@@ -1,25 +1,34 @@
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { redirect } from "next/navigation";
 
 import { type Database } from "./supabase-types";
 
-export async function createServerSupabaseClient() {
+export function createServerSupabaseClient() {
   const cookieStore = cookies();
-
+  
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        get(name) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
+        set(name, value, options) {
+          cookieStore.set({
+            name,
+            value,
+            ...options,
+          });
         },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: "", ...options });
+        remove(name, options) {
+          cookieStore.set({
+            name,
+            value: "",
+            ...options,
+            maxAge: 0,
+          });
         },
       },
     }
@@ -27,7 +36,7 @@ export async function createServerSupabaseClient() {
 }
 
 export async function isUserAuthenticated() {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   return !!session;
@@ -42,14 +51,14 @@ export async function requireAuth() {
 }
 
 export async function getUserSession() {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   return session;
 }
 
 export async function getUserProfile() {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;

@@ -32,7 +32,7 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Influencer Card - Emma */}
-          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border">
             <div className="h-48 bg-muted flex items-center justify-center">
               <p className="text-muted-foreground">Image Placeholder</p>
             </div>
@@ -47,7 +47,7 @@ export default function Home() {
           </div>
           
           {/* Influencer Card - Jake */}
-          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border">
             <div className="h-48 bg-muted flex items-center justify-center">
               <p className="text-muted-foreground">Image Placeholder</p>
             </div>
@@ -62,7 +62,7 @@ export default function Home() {
           </div>
           
           {/* Influencer Card - Sophia */}
-          <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
+          <div className="bg-card rounded-lg overflow-hidden shadow-lg border">
             <div className="h-48 bg-muted flex items-center justify-center">
               <p className="text-muted-foreground">Image Placeholder</p>
             </div>
@@ -92,19 +92,19 @@ export default function Home() {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center border">
             <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">1</div>
             <h3 className="text-xl font-semibold mb-3">Create an Account</h3>
             <p>Sign up for Fancrush Talkline and verify your phone number to get started.</p>
           </div>
           
-          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center border">
             <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">2</div>
             <h3 className="text-xl font-semibold mb-3">Purchase Minutes</h3>
             <p>Buy talk time minutes to use with any influencer on the platform.</p>
           </div>
           
-          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center">
+          <div className="bg-card rounded-lg p-6 flex flex-col items-center text-center border">
             <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">3</div>
             <h3 className="text-xl font-semibold mb-3">Start Talking</h3>
             <p>Initiate a call to any influencer and enjoy a natural conversation powered by AI.</p>
